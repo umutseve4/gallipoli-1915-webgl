@@ -46,15 +46,21 @@ jsDelivr. Nothing is vendored, so the page needs network access on first load.
 
 ## Running it
 
+**The scene is already published** at
+<https://umutseve4.github.io/gallipoli-1915-webgl/> — no download required.
+Verified live on 2026-09-07; the HUD served from that URL reports 12 capital
+ships, 18 coastal batteries, 146 field units and a 40-buoy mine line, matching
+the table above.
+
+To run it locally instead:
+
 ```bash
 python -m http.server 8000   # then open http://localhost:8000
 ```
 
 Opening `index.html` straight from the filesystem also works in most browsers,
-but a local server is safer for ES modules.
-
-GitHub Pages: enable **Settings → Pages → Deploy from a branch → `main` / `/ (root)`**.
-`.nojekyll` is committed so the file is served verbatim.
+but a local server is safer for ES modules. `.nojekyll` is committed so Pages
+serves the file verbatim.
 
 ## Limits — read this first
 
@@ -62,6 +68,14 @@ GitHub Pages: enable **Settings → Pages → Deploy from a branch → `main` / 
 plainly: a stylised interpretation inspired by the geography and atmosphere of
 the period, containing no graphic violence. Ship, battery and unit counts are
 visual staging figures, **not sourced orders of battle**.
+
+**No performance measurement is claimed.** The pixel ratio is capped at 1.7 and
+shadows use PCF soft maps; those are defensible defaults, not benchmark results.
+There is no benchmark in this repository.
+
+**There is no automated test suite here.** This repository has no
+`.github/workflows` directory. Claims in this README were checked by reading
+`index.html` and by fetching the published page, not by CI.
 
 Accessibility and resilience:
 
