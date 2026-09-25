@@ -61,6 +61,10 @@ function includeNames(shader) {
   return [...shader.matchAll(/^[ \t]*#include +<([\w./]+)>[ \t]*$/gm)].map(match => match[1]);
 }
 
+test('HTML contains no forbidden ASCII control characters', () => {
+  assert.doesNotMatch(html, /[\x00-\x08\x0b\x0e-\x1f\x7f]/);
+});
+
 test('inline module JavaScript parses after removing its two static imports', () => {
   const match = html.match(/<script\s+type="module">([\s\S]*?)<\/script>/);
   assert.ok(match, 'inline module must exist');
