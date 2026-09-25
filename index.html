@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17100d"><meta name="description" content="1915 Çanakkale Boğazı üzerinde geçen, prosedürel ve stilize Three.js muharebe simülasyonu.">
-<title>Çanakkale 1915 — Boğaz Muharebesi</title>
+<title>Çanakkale 1915 &#8212; Boğaz Muharebesi</title>
 <style>
 :root{color-scheme:dark;--paper:#e8ddc7;--dim:#a99d88;--ember:#ef7b3b;--panel:rgba(15,12,10,.68);--line:rgba(232,221,199,.2)}
 *{box-sizing:border-box}html,body,#app{width:100%;height:100%;margin:0;overflow:hidden;background:#17100d}body{font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:var(--paper)}canvas{display:block;width:100%;height:100%}
@@ -41,8 +41,40 @@ function fbm(x,z){let v=0,a=.55,f=1;for(let i=0;i<5;i++){v+=a*noise(x*f,z*f);f*=
 function landHeight(x,z){const shore=THREE.MathUtils.smoothstep(Math.abs(x),20,43), ridges=fbm(x*.034,z*.028)*18+Math.sin(z*.045+x*.02)*2.7;return shore*(3+ridges+Math.pow(Math.max(0,Math.abs(x)-23),.62)*.72)-2.8}
 const earth=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.98,metalness:0});
 function buildLand(){const g=new THREE.PlaneGeometry(250,310,170,210);g.rotateX(-Math.PI/2);const p=g.attributes.position,c=[];const lo=new THREE.Color(0x3b3a27),hi=new THREE.Color(0x776343),rock=new THREE.Color(0x5a4a40);for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),y=landHeight(x,z);p.setY(i,y);const t=THREE.MathUtils.clamp((y-1)/31,0,1),cc=lo.clone().lerp(hi,t).lerp(rock,hash(x*.4,z*.4)*.23);c.push(cc.r,cc.g,cc.b)}g.setAttribute('color',new THREE.Float32BufferAttribute(c,3));g.computeVertexNormals();const m=new THREE.Mesh(g,earth);m.receiveShadow=m.castShadow=true;scene.add(m)}buildLand();
-const waterUniforms={uTime:{value:0},uLight:{value:new THREE.Vector3(-.6,.4,.2).normalize()}};
-const water=new THREE.Mesh(new THREE.PlaneGeometry(55,330,60,190),new THREE.ShaderMaterial({uniforms:waterUniforms,fog:true,vertexShader:`uniform float uTime;varying vec3 vW;varying float vN;#include <fog_pars_vertex> void main(){vec3 p=position;vN=sin(p.x*.32+uTime*.8)*.24+sin(p.y*.11-uTime*.55)*.34+sin((p.x+p.y)*.06+uTime*.3)*.26;p.z+=vN;vec4 w=modelMatrix*vec4(p,1.);vW=w.xyz;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;#include <fog_vertex>}`,fragmentShader:`uniform vec3 uLight;varying vec3 vW;varying float vN;#include <common> #include <fog_pars_fragment> void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));vec3 v=normalize(cameraPosition-vW);float f=pow(1.-max(dot(n,v),0.),3.);float s=pow(max(dot(reflect(-uLight,n),v),0.),38.);vec3 col=mix(vec3(.035,.08,.095),vec3(.26,.19,.14),f*.78)+vec3(1.,.37,.11)*s*1.5;gl_FragColor=vec4(col,1.);#include <tonemapping_fragment> #include <colorspace_fragment> #include <fog_fragment>}`}));water.rotation.x=-Math.PI/2;water.position.y=-.1;water.receiveShadow=true;scene.add(water);
+const waterUniforms=THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{uTime:{value:0},uLight:{value:new THREE.Vector3(-.6,.4,.2).normalize()}}]);
+const water=new THREE.Mesh(new THREE.PlaneGeometry(55,330,60,190),new THREE.ShaderMaterial({uniforms:waterUniforms,fog:true,vertexShader:`
+uniform float uTime;
+varying vec3 vW;
+varying float vN;
+#include <fog_pars_vertex>
+void main(){
+  vec3 p=position;
+  vN=sin(p.x*.32+uTime*.8)*.24+sin(p.y*.11-uTime*.55)*.34+sin((p.x+p.y)*.06+uTime*.3)*.26;
+  p.z+=vN;
+  vec4 w=modelMatrix*vec4(p,1.);
+  vW=w.xyz;
+  vec4 mvPosition=viewMatrix*w;
+  gl_Position=projectionMatrix*mvPosition;
+  #include <fog_vertex>
+}
+`,fragmentShader:`
+uniform vec3 uLight;
+varying vec3 vW;
+varying float vN;
+#include <common>
+#include <fog_pars_fragment>
+void main(){
+  vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));
+  vec3 v=normalize(cameraPosition-vW);
+  float f=pow(1.-max(dot(n,v),0.),3.);
+  float s=pow(max(dot(reflect(-uLight,n),v),0.),38.);
+  vec3 col=mix(vec3(.035,.08,.095),vec3(.26,.19,.14),f*.78)+vec3(1.,.37,.11)*s*1.5;
+  gl_FragColor=vec4(col,1.);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+  #include <fog_fragment>
+}
+`}));water.rotation.x=-Math.PI/2;water.position.y=-.1;water.receiveShadow=true;scene.add(water);
 const skyMat=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{uDay:{value:0}},vertexShader:`varying vec3 v;void main(){v=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform float uDay;varying vec3 v;void main(){float h=normalize(v).y;vec3 dawn=vec3(.53,.19,.09),day=vec3(.34,.48,.57),top=vec3(.025,.032,.055);vec3 low=mix(dawn,day,uDay);gl_FragColor=vec4(mix(low,top,smoothstep(-.08,.78,h)),1.);}`});scene.add(new THREE.Mesh(new THREE.SphereGeometry(360,36,20),skyMat));
 const hemi=new THREE.HemisphereLight(0x9cb0bb,0x2a1710,.82);scene.add(hemi);const sun=new THREE.DirectionalLight(0xff9658,4.2);sun.position.set(-105,82,95);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-150,right:150,top:160,bottom:-160,near:1,far:380});sun.shadow.bias=-.0003;scene.add(sun);scene.add(new THREE.AmbientLight(0x433c42,.22));
 const mats={stone:new THREE.MeshStandardMaterial({color:0x655b4c,roughness:.95}),dark:new THREE.MeshStandardMaterial({color:0x343333,roughness:.75,metalness:.25}),wood:new THREE.MeshStandardMaterial({color:0x4d3526,roughness:.9}),cloth:new THREE.MeshStandardMaterial({color:0x756b54,roughness:1}),sand:new THREE.MeshStandardMaterial({color:0x8b7654,roughness:1}),roof:new THREE.MeshStandardMaterial({color:0x4a2922,roughness:.95}),uniform:new THREE.MeshStandardMaterial({color:0x4b4a35,roughness:1})};
